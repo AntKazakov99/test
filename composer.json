@@ -1,5 +1,13 @@
 {
     "require": {
-        "symfony/dotenv": "^7.2"
+        "symfony/dotenv": "^7.2",
+        "amocrm/amocrm-api-library": "^1.10",
+        "ext-imap": "*",
+        "ext-dom": "*"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ant\\": "lib/"
+        }
     }
 }
