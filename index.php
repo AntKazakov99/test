@@ -11,19 +11,24 @@ $app = Application::getInstance();
 
 $cacheFilePath = __DIR__ . '/tmp/cache.json';
 
+if (isset($_GET['forced']) && $_GET['forced'] === 'true') {
+    unlink($cacheFilePath);
+}
+
 if (file_exists($cacheFilePath)) {
     $data = json_decode(file_get_contents($cacheFilePath), true);
 }
 
-$emailIds = isset($data)  ? $data['ids'] : $app->requestEmailIds();
+$emailIds = isset($data)  ? $data['ids'] : $app->requestEmailIds('ALL');
 
 $startTime = microtime(true);
+
 
 $emails = isset($data) ? $data['emails'] : [];
 foreach ($emailIds as $key => $emailId) {
     if (microtime(true) - $startTime >= $maxExecTime - 10) {
         file_put_contents($cacheFilePath, json_encode(['ids' => $emailIds, 'current' => $key, 'emails' => $emails]));
-        header('Location: ' . $_SERVER['REQUEST_URI']);
+        header('Location: ' . explode('?', $_SERVER["REQUEST_URI"])[0]);
         die();
     }
 
@@ -51,14 +56,12 @@ foreach ($emails as $email) {
                 'category' => $email['category'] ?: $email['commentary']
             ])
             ->setName('Application for access')
+            ->setPipelineId(9041154)
         );
     } catch (\AmoCRM\Exceptions\InvalidArgumentException $e) {
         var_dump($e->getMessage());
     }
-    break;
 }
-
-var_dump($leads);
 
 foreach ($leads->chunk(50) as $chunk) {
     $app->getAmoCrmApiClient()->leads()->add($chunk);

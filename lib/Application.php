@@ -222,6 +222,10 @@ class Application
         $overview = imap_fetch_overview($this->getImapConnection(), $id);
         $message = imap_fetchbody($this->getImapConnection(), $id, 1);
 
+        if ($message === false || $overview === false) {
+            return null;
+        }
+
         $data['requestDate'] = $overview[0]->udate;
 
         $dom = new DOMDocument();
@@ -242,12 +246,23 @@ class Application
             }
         }
 
-        if (!isset($data['author'])) {
-            // Второй парсер
-        }
-
         if (!isset($data['author']) || !isset($data['receiver'])) {
-            return null;
+            $authorMatches = [];
+            $receiverMatches = [];
+            $categoryMatches = [];
+            preg_match('/(?<=От кого: )([\w\.\-]+@[\w\.\-]+\.\w+)/', $message, $authorMatches);
+            preg_match('/(?<=Кому: )([\w\.\-]+@[\w\.\-]+\.\w+)/', $message, $receiverMatches);
+            preg_match('/(?<=Продукты: ).*(?=\r)/', $message, $categoryMatches);
+
+            if (!count($authorMatches) || !count($receiverMatches) || !count($categoryMatches)) {
+                return null;
+            }
+
+            $data['author'] = $authorMatches[0];
+            $data['receiver'] = $receiverMatches[0];
+            $data['category'] = $categoryMatches[0];
+
+            return $data;
         }
 
         return $data;
