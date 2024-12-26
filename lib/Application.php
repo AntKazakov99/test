@@ -4,6 +4,7 @@ namespace Ant;
 
 use AmoCRM\Client\AmoCRMApiClient;
 use AmoCRM\Collections\CustomFieldsValuesCollection;
+use AmoCRM\Collections\TagsCollection;
 use AmoCRM\Exceptions\AmoCRMoAuthApiException;
 use AmoCRM\Exceptions\InvalidArgumentException;
 use AmoCRM\Models\CustomFieldsValues\DateCustomFieldValuesModel;
@@ -16,6 +17,7 @@ use AmoCRM\Models\CustomFieldsValues\ValueModels\DateCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\TextareaCustomFieldValueModel;
 use AmoCRM\Models\CustomFieldsValues\ValueModels\TextCustomFieldValueModel;
 use AmoCRM\Models\LeadModel;
+use AmoCRM\Models\TagModel;
 use DateTime;
 use DOMDocument;
 use Exception;
@@ -323,5 +325,17 @@ class Application
         return (new TextareaCustomFieldValuesModel())
             ->setFieldId($id)
             ->setValues($valueCollection);
+    }
+
+    public function createTags(array $tags): TagsCollection
+    {
+        $tagCollection = (new TagsCollection());
+        foreach ($tags as $tag) {
+            $tag = (new TagModel())
+                ->setId($tag['id'])
+                ->setName($tag['name']);
+            $tagCollection->add($tag);
+        }
+        return $tagCollection;
     }
 }

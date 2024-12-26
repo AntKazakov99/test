@@ -19,7 +19,7 @@ if (file_exists($cacheFilePath)) {
     $data = json_decode(file_get_contents($cacheFilePath), true);
 }
 
-$emailIds = isset($data)  ? $data['ids'] : $app->requestEmailIds('ALL');
+$emailIds = isset($data) ? $data['ids'] : $app->requestEmailIds('ALL');
 
 $startTime = microtime(true);
 
@@ -55,8 +55,14 @@ foreach ($emails as $email) {
                 'date' => $email['requestDate'],
                 'category' => $email['category'] ?: $email['commentary']
             ])
-            ->setName('Application for access')
-            ->setPipelineId(9041154)
+                ->setName('Application for access')
+                ->setPipelineId(9041154)
+                ->setTags($app->createTags([
+                    [
+                        'id' => 248761,
+                        'name' => 'amoCRM'
+                    ]
+                ]))
         );
     } catch (\AmoCRM\Exceptions\InvalidArgumentException $e) {
         var_dump($e->getMessage());
@@ -64,5 +70,9 @@ foreach ($emails as $email) {
 }
 
 foreach ($leads->chunk(50) as $chunk) {
-    $app->getAmoCrmApiClient()->leads()->add($chunk);
+    try {
+        $app->getAmoCrmApiClient()->leads()->add($chunk);
+    } catch (\AmoCRM\Exceptions\AmoCRMMissedTokenException|\AmoCRM\Exceptions\AmoCRMoAuthApiException|\AmoCRM\Exceptions\AmoCRMApiException|\Random\RandomException $e) {
+        var_dump($e->getMessage());
+    }
 }
