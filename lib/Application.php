@@ -20,6 +20,7 @@ use AmoCRM\Models\LeadModel;
 use AmoCRM\Models\TagModel;
 use DateTime;
 use DOMDocument;
+use DOMNode;
 use Exception;
 use IMAP\Connection;
 use League\OAuth2\Client\Token\AccessToken;
@@ -337,5 +338,50 @@ class Application
             $tagCollection->add($tag);
         }
         return $tagCollection;
+    }
+
+    public function getWorkersData(): array
+    {
+        $page = file_get_contents('https://my.amocrm.ru');
+
+        $page = mb_convert_encoding($page, 'utf-8', mb_detect_encoding($page));
+
+        $page = mb_convert_encoding($page, 'html-entities', 'utf-8');
+
+        $dom = new DOMDocument();
+        @$dom->loadHTML($page);
+
+
+        $xpath = new \DOMXPath($dom);
+
+        $rows = $xpath->query("//*[contains(@class, 'users-table__row')]");
+
+        $workers = [];
+        /**
+         * @var DOMNode $row
+         */
+        foreach ($rows as $row) {
+            $columns = $row->childNodes;
+
+            $filteredColumns = [];
+            /**
+             * @var DOMNode $column
+             */
+            foreach ($columns as $column) {
+                if ($column->nodeName == 'div') {
+                    $filteredColumns[] = $column;
+                }
+            }
+            $name = trim($filteredColumns[1]->nodeValue);
+            $department = trim($filteredColumns[3]->nodeValue);
+            $email = trim($filteredColumns[5]->nodeValue);
+            $workers[$email] = [
+                'name' => $name,
+                'department' => $department,
+                'email' => $email
+            ];
+        }
+
+        return $workers;
     }
 }

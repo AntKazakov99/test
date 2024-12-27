@@ -20,7 +20,7 @@ class Application
 {
     private static ?self $instance = null;
     private ?Connection $imapConnection = null;
-    private const MAILBOX = '{imap.yandex.ru:993/imap/ssl}INBOX';
+    private const MAILBOX = '{imap.yandex.ru:993/imap/ssl}amo';
     private const USER = '';
     private const PASSWORD = '';
 
@@ -80,7 +80,7 @@ class Application
         $data = [];
 
         $overview = imap_fetch_overview($this->getImapConnection(), $id);
-        $message = imap_fetchbody($this->getImapConnection(), $id, 1);
+        $message = imap_fetchbody($this->getImapConnection(), $id, 1, FT_PEEK);
 
         if ($message === false || $overview === false) {
             return null;
