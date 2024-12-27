@@ -19,7 +19,7 @@ if (file_exists($cacheFilePath)) {
     $data = json_decode(file_get_contents($cacheFilePath), true);
 }
 
-$emailIds = isset($data) ? $data['ids'] : $app->requestEmailIds('ALL');
+$emailIds = isset($data) ? $data['ids'] : $app->requestEmailIds();
 
 $startTime = microtime(true);
 
