@@ -37,12 +37,13 @@ class Application
     private ?array $config = null;
     private ?AmoCRMApiClient $amoCrmApiClient = null;
     private ?AccessToken $accessToken = null;
-    private ?Connection $imapConnection = null;
+    private ?ImapClient $imapClient = null;
     private const CUSTOM_FIELDS_IDS = [
         'author' => 682713,
-        'receiver' => 682717,
+        'employee' => 682717,
         'date' => 682705,
-        'category' => 769127
+        'commentary' => 769127,
+        'category' => 771745,
     ];
 
     private function __construct()
@@ -177,45 +178,13 @@ class Application
         return $accessTokenData['base_domain'];
     }
 
-    // Работа с почтой
-
-    private const SEARCH_PATTERNS = [
-        [
-            'parsed' => true,
-            'header' => 'Автор запроса',
-            'code' => 'author'
-        ],
-        [
-            'parsed' => true,
-            'header' => 'Кому выдать доступ',
-            'code' => 'receiver'
-        ],
-        [
-            'parsed' => true,
-            'header' => 'Общие доступы',
-            'code' => 'category'
-        ],
-        [
-            'parsed' => true,
-            'header' => 'Комментарий',
-            'code' => 'commentary'
-        ]
-    ];
-
-    public function getImapConnection(): Connection
+    public function getImapClient(): ImapClient
     {
-        if (is_null($this->imapConnection)) {
+        if ($this->imapClient === null) {
             $config = $this->getConfig();
-            $this->imapConnection = imap_open($config['MAILBOX'], $config['USER'], $config['PASSWORD']);
+            $this->imapClient = new ImapClient($config['IMAP_MAILBOX'], $config['IMAP_USER'], $config['IMAP_PASSWORD']);
         }
-        return $this->imapConnection;
-    }
-
-    public function requestEmailIds(string $criteria = 'ALL'): array
-    {
-        $emailIds = imap_search($this->getImapConnection(), $criteria) ?: [];
-        rsort($emailIds);
-        return $emailIds;
+        return $this->imapClient;
     }
 
     public function parseEmail(string $id): ?array
@@ -277,10 +246,11 @@ class Application
     public function createLeadFromData(array $emailData): LeadModel
     {
         $leadFieldsValues = (new CustomFieldsValuesCollection())
-            ->add($this->createTextFieldValue(self::CUSTOM_FIELDS_IDS['author'], $emailData['author']))
-            ->add($this->createTextFieldValue(self::CUSTOM_FIELDS_IDS['receiver'], $emailData['receiver']))
-            ->add($this->createDateFieldValue(self::CUSTOM_FIELDS_IDS['date'], (int)$emailData['date']))
-            ->add($this->createTextareaFieldValue(self::CUSTOM_FIELDS_IDS['category'], $emailData['category']));
+            ->add($this->createTextFieldValue(self::CUSTOM_FIELDS_IDS['author'], $emailData['authorEmail']))
+            ->add($this->createTextFieldValue(self::CUSTOM_FIELDS_IDS['employee'], $emailData['employeeEmail']))
+            ->add($this->createDateFieldValue(self::CUSTOM_FIELDS_IDS['date'], (int)$emailData['arrivalDate']))
+            ->add($this->createTextareaFieldValue(self::CUSTOM_FIELDS_IDS['commentary'], $emailData['commentary']))
+            ->add($this->createTextFieldValue(self::CUSTOM_FIELDS_IDS['category'], $emailData['category']));
 
         return (new LeadModel())
             ->setCustomFieldsValues($leadFieldsValues);
